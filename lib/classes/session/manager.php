@@ -1171,6 +1171,7 @@ class manager {
      * named "logintoken" with the value being the result of this function.
      * Logins will be rejected if they do not include this token as well as
      * the username and password fields.
+     * The login token is valid for the whole lifespan of the session.
      *
      * @return string The current login token.
      */
@@ -1187,11 +1188,6 @@ class manager {
             $state = $SESSION->logintoken[self::$logintokenkey];
         }
         if (empty($state)) {
-            $state = self::create_login_token();
-        }
-
-        // Check token lifespan.
-        if ($state['created'] < (time() - $CFG->sessiontimeout)) {
             $state = self::create_login_token();
         }
 
