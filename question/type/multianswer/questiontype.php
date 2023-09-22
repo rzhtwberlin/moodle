@@ -119,7 +119,7 @@ class qtype_multianswer extends question_type {
         }
 
         $wrappedquestions = $DB->get_records_list('question', 'id',
-                explode(',', $sequence), 'id ASC');
+                array_filter(explode(',', $sequence)), 'id ASC');
 
         // We want an array with question ids as index and the positions as values.
         $sequence = array_flip(explode(',', $sequence));
