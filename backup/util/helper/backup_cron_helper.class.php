@@ -83,11 +83,22 @@ abstract class backup_cron_automated_helper {
             $now = time();
         }
 
+        $config = get_config('backup');
+        if ($config->backup_courses_in_categories === '') {
+            $categorycondition = '';
+            $insqlparams = [];
+        } else {
+            $categories = explode(',', $config->backup_courses_in_categories);
+            list($insql, $insqlparams) = $DB->get_in_or_equal($categories);
+            $categorycondition = "AND c.category $insql";
+        }
+
         $sql = 'SELECT c.*,
                        COALESCE(bc.nextstarttime, 1) nextstarttime
                   FROM {course} c
              LEFT JOIN {backup_courses} bc ON bc.courseid = c.id
-                 WHERE bc.nextstarttime IS NULL OR bc.nextstarttime < ?
+                 WHERE (bc.nextstarttime IS NULL OR bc.nextstarttime < ?)
+                    '.$categorycondition.'
               ORDER BY nextstarttime ASC,
                        c.timemodified DESC,
                        c.sortorder';
@@ -95,6 +106,7 @@ abstract class backup_cron_automated_helper {
         $params = array(
             $now,  // Only get courses where the backup start time is in the past.
         );
+        $params = array_merge($params, $insqlparams);
         $rs = $DB->get_recordset_sql($sql, $params);
 
         return $rs;

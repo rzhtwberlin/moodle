@@ -567,6 +567,10 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
     )));
     $temp->add(new admin_setting_configcheckbox('backup/backup_auto_skip_modif_prev', new lang_string('skipmodifprev', 'backup'), new lang_string('skipmodifprevhelp', 'backup'), 0));
 
+    $temp->add(new admin_settings_coursecat_multiselect('backup/backup_courses_in_categories',
+        new lang_string('backup_courses_in_categories', 'backup'),
+        new lang_string('backup_courses_in_categories_help', 'backup'), []));
+
     // Automated defaults section.
     $temp->add(new admin_setting_heading('automatedsettings', new lang_string('automatedsettings','backup'), new lang_string('recyclebin_desc', 'backup')));
     $temp->add(new admin_setting_configcheckbox('backup/backup_auto_users', new lang_string('generalusers', 'backup'), new lang_string('configgeneralusers', 'backup'), 1));
