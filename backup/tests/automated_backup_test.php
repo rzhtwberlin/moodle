@@ -339,6 +339,75 @@ class automated_backup_test extends \advanced_testcase {
             $output);
         \core\task\manager::adhoc_task_complete($task);
     }
+
+    /**
+     * Test the course category filter for backup course selection.
+     */
+    public function test_backup_course_in_categories() {
+        global $DB;
+
+        $category1 = \core_course_category::create(['name' => 'Cat1']);
+        $category2 = \core_course_category::create(['name' => 'Cat2', 'parent' => $category1->id]);
+        $category3 = \core_course_category::create(['name' => 'Cat3']);
+
+        $generator = $this->getDataGenerator();
+
+        $course1 = $generator->create_course(['category' => $category1->id]);
+        $course2 = $generator->create_course(['category' => $category2->id]);
+        $course3 = $generator->create_course(['category' => $category3->id]);
+
+        // Enable automated back up.
+        set_config('backup_auto_active', true, 'backup');
+        set_config('backup_auto_weekdays', '1111111', 'backup');
+
+        $classobject = $this->backupcronautomatedhelper->return_this();
+        $method = new \ReflectionMethod('\backup_cron_automated_helper', 'get_courses');
+        $method->setAccessible(true); // Allow accessing of private method.
+
+        // Filter for no category. Filter should not apply at all.
+        $categories = [];
+        set_config('backup_courses_in_categories', implode(',', $categories), 'backup');
+        $courses = $method->invoke($classobject);
+        $courseids = [];
+        foreach ($courses as $course) {
+            $courseids[] = $course->id;
+        }
+        $this->assertContains($course1->id, $courseids);
+        $this->assertContains($course2->id, $courseids);
+        $this->assertContains($course3->id, $courseids);
+        $this->assertContains($this->course->id, $courseids);
+
+        // Filter for one category.
+        $categories = [
+            $category1->id,
+        ];
+        set_config('backup_courses_in_categories', implode(',', $categories), 'backup');
+        $courses = $method->invoke($classobject);
+        $courseids = [];
+        foreach ($courses as $course) {
+            $courseids[] = $course->id;
+        }
+        $this->assertContains($course1->id, $courseids);
+        $this->assertNotContains($course2->id, $courseids);
+        $this->assertNotContains($course3->id, $courseids);
+        $this->assertNotContains($this->course->id, $courseids);
+
+        // Filter for two categories.
+        $categories = [
+            $category1->id,
+            $category2->id,
+        ];
+        set_config('backup_courses_in_categories', implode(',', $categories), 'backup');
+        $courses = $method->invoke($classobject);
+        $courseids = [];
+        foreach ($courses as $course) {
+            $courseids[] = $course->id;
+        }
+        $this->assertContains($course1->id, $courseids);
+        $this->assertContains($course2->id, $courseids);
+        $this->assertNotContains($course3->id, $courseids);
+        $this->assertNotContains($this->course->id, $courseids);
+    }
 }
 
 /**
